@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScamCheck - Kiểm Tra Tin Nhắn Lừa Đảo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            background-color: #f0f2f5;
+            min-height: 100vh;
+            font-size: 18px; /* Cỡ chữ nền tảng lớn hơn tiêu chuẩn, giúp dễ đọc */
+            color: #222; /* Độ tương phản cao chống mỏi mắt */
+        }
+
+        /* Thanh bên màu tím đậm */
+        .sidebar {
+            width: 320px; 
+            background-color: #4a148c; 
+            color: #ffffff;
+            padding: 40px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .logo-container {
+            background-color: #ffffff;
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+        }
+
+        /* Icon khiên */
+        .shield-icon {
+            width: 55px;
+            height: 60px;
+            background: #4285f4;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            position: relative;
+        }
+        .shield-icon::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            background: #e8f0fe;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        }
+
+        .sidebar h1 {
+            font-size: 28px;
+            letter-spacing: 1px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+
+        .sidebar .description {
+            font-size: 16px;
+            text-align: center;
+            line-height: 1.7;
+            margin-bottom: 40px;
+            opacity: 0.95;
+        }
+
+        /* Khung lưu ý mới */
+        .warning-box {
+            background-color: rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
+            padding: 22px 18px;
+            width: 100%;
+            border: 2px solid rgba(255, 255, 255, 0.25);
+        }
+
+        .warning-box h3 {
+            font-size: 18px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .warning-box p {
+            font-size: 15px;
+            line-height: 1.7;
+            text-align: justify;
+        }
+
+        /* Vùng nội dung chính */
+        .main-content {
+            flex-grow: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .header-section h2 {
+            color: #6a1b9a; 
+            font-size: 34px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .header-section p {
+            color: #444;
+            font-size: 18px;
+        }
+
+        /* Thẻ chứa (Cards) */
+        .card {
+            background-color: #ffffff;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Khung nhập liệu viền nét đứt rõ ràng */
+        .textarea-container {
+            border: 3px dashed #8e24aa; 
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 25px;
+            background-color: #faf7fc; 
+        }
+
+        .textarea-container textarea {
+            width: 100%;
+            height: 180px; 
+            border: none;
+            outline: none;
+            resize: none;
+            font-size: 18px; 
+            color: #111;
+            background: transparent;
+            line-height: 1.6;
+        }
+
+        .textarea-container textarea::placeholder {
+            color: #777; 
+        }
+
+        .button-wrapper {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Nút kiểm tra lớn, dễ bấm */
+        .btn-check {
+            background-color: #7b1fa2; 
+            color: #ffffff;
+            border: none;
+            padding: 16px 50px; 
+            font-size: 20px; 
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 15px rgba(123, 31, 162, 0.3);
+            transition: all 0.2s ease;
+            width: 100%; 
+            max-width: 320px;
+            justify-content: center;
+        }
+
+        .btn-check:hover, .btn-check:active {
+            background-color: #512da8; 
+            transform: scale(1.02);
+        }
+
+        /* Phần kết quả phân tích */
+        .result-title {
+            color: #6a1b9a;
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .result-desc {
+            color: #333;
+            font-size: 18px;
+            line-height: 1.7;
+        }
+
+        /* ================= TỐI ƯU GIAO DIỆN DI ĐỘNG (RESPONSIVE) ================= */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                font-size: 17px; /* Cân chỉnh lại kích thước chữ vừa vặn hơn trên di động */
+            }
+
+            /* Chuyển Sidebar thành Header phía trên */
+            .sidebar {
+                width: 100%;
+                padding: 30px 20px;
+                text-align: center;
+            }
+
+            .sidebar h1 {
+                font-size: 26px;
+                margin-bottom: 15px;
+            }
+
+            .sidebar .description {
+                font-size: 15px;
+                margin-bottom: 25px;
+            }
+
+            .main-content {
+                padding: 20px 15px;
+                gap: 20px;
+            }
+
+            .header-section h2 {
+                font-size: 26px;
+            }
+
+            .header-section p {
+                font-size: 16px;
+            }
+
+            .card {
+                padding: 20px 15px;
+            }
+
+            .textarea-container {
+                padding: 12px;
+            }
+
+            .textarea-container textarea {
+                font-size: 17px;
+                height: 140px;
+            }
+
+            .btn-check {
+                font-size: 18px;
+                padding: 14px 0;
+            }
+
+            .result-title {
+                font-size: 18px;
+            }
+
+            .result-desc {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar bên trái -->
+    <div class="sidebar">
+        <div class="logo-container">
+            <div class="shield-icon"></div>
+        </div>
+        <h1>ScamCheck</h1>
+        <p class="description">ScamCheck hỗ trợ người dùng kiểm tra nội dung nghi ngờ lừa đảo.</p>
+        
+        <div class="warning-box">
+            <h3>⚠️ Lưu ý quan trọng</h3>
+            <p>ScamCheck là công cụ giáo dục do nhóm học viên phát triển và đánh giá của ứng dụng không thay thế cảnh báo chính thức từ ngân hàng hoặc cơ quan chức năng. Khi nghi ngờ, người dùng nên gọi tổng đài chính thức của ngân hàng được in trên thẻ.</p>
+        </div>
+    </div>
+
+    <!-- Nội dung chính bên phải -->
+    <div class="main-content">
+        <div class="header-section">
+            <h2>KIỂM TRA TIN NHẮN LỪA ĐẢO</h2>
+            <p>Hãy sao chép (copy) tin nhắn nghi ngờ rồi dán vào ô dưới đây.</p>
+        </div>
+
+        <!-- Khung nhập tin nhắn -->
+        <div class="card">
+            <div class="textarea-container">
+                <textarea placeholder="Chạm vào đây và dán nội dung cần kiểm tra..."></textarea>
+            </div>
+            <div class="button-wrapper">
+                <button class="btn-check">
+                    🔍 Nhấn để Kiểm tra
+                </button>
+            </div>
+        </div>
+
+        <!-- Khung kết quả -->
+        <div class="card">
+            <div class="result-title">KẾT QUẢ PHÂN TÍCH</div>
+            <p class="result-desc">Kết quả phân tích tin nhắn lừa đảo sẽ hiển thị chi tiết tại đây sau khi bạn tích hợp AI.</p>
+        </div>
+    </div>
+
+</body>
+</html>
