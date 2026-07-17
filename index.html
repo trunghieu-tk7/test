@@ -111,6 +111,7 @@
             gap: 30px;
             max-width: 900px;
             margin: 0 auto;
+            width: 100%;
         }
 
         .header-section {
@@ -209,6 +210,21 @@
             line-height: 1.7;
         }
 
+        /* Thành phần lịch sử riêng biệt */
+        .history-item {
+            padding: 15px; 
+            border-bottom: 1px solid #eee; 
+            font-size: 16px; 
+            line-height: 1.6;
+            transition: background 0.2s ease;
+        }
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        .history-item:hover {
+            background-color: #fcf9fe;
+        }
+
         /* ================= TỐI ƯU GIAO DIỆN DI ĐỘNG (RESPONSIVE) ================= */
         @media (max-width: 768px) {
             body {
@@ -252,6 +268,7 @@
 
             .textarea-container {
                 padding: 12px;
+                margin-bottom: 15px;
             }
 
             .textarea-container textarea {
@@ -262,6 +279,7 @@
             .btn-check {
                 font-size: 18px;
                 padding: 14px 0;
+                max-width: 100%; /* Trên điện thoại nút bấm dãn rộng hết cỡ cho dễ chạm */
             }
 
             .result-title {
@@ -276,7 +294,7 @@
 </head>
 <body>
 
-    <!-- Sidebar bên trái -->
+    <!-- Sidebar bên trái (Trên mobile tự chuyển thành Header phía trên) -->
     <div class="sidebar">
         <div class="logo-container">
             <div class="shield-icon"></div>
@@ -309,18 +327,119 @@
             </div>
         </div>
 
-        <!-- Khung kết quả -->
+        <!-- Khung kết quả phân tích -->
         <div class="card">
             <div class="result-title">KẾT QUẢ PHÂN TÍCH</div>
             <p class="result-desc">Kết quả phân tích tin nhắn lừa đảo sẽ hiển thị chi tiết tại đây sau khi bạn tích hợp AI.</p>
         </div>
-    </div>
-    <div class="card" style="margin-top: 20px;">
-        <div class="result-title" style="color: #4a148c;">📜 Lịch sử kiểm tra gần đây</div>
-        <div id="history-container" style="max-height: 250px; overflow-y: auto; margin-top: 15px;">
-            <p class="result-desc" style="color: #777; font-style: italic;">Chưa có lịch sử kiểm tra nào.</p>
+
+        <!-- Khung lịch sử kiểm tra (Đã được đưa vào đúng cấu trúc main-content để tương thích Mobile) -->
+        <div class="card">
+            <div class="result-title" style="color: #4a148c;">📜 Lịch sử kiểm tra gần đây</div>
+            <div id="history-container" style="max-height: 280px; overflow-y: auto;">
+                <p class="result-desc" style="color: #777; font-style: italic;">Chưa có lịch sử kiểm tra nào.</p>
+            </div>
         </div>
     </div>
 
+    <!-- Đoạn mã xử lý kết nối API Python và quản lý Lịch sử cục bộ bằng AI -->
+    <script>
+        async function kiemTraTinNhan() {
+            const textarea = document.querySelector(".textarea-container textarea");
+            const resultDesc = document.querySelector(".result-desc");
+            const btnCheck = document.querySelector(".btn-check");
+            const content = textarea.value.trim();
+
+            if (!content) {
+                alert("Vui lòng nhập nội dung tin nhắn cần kiểm tra!");
+                return;
+            }
+
+            // Thiết lập trạng thái đang tải
+            btnCheck.disabled = true;
+            btnCheck.style.opacity = "0.7";
+            btnCheck.innerText = "⏳ Đang phân tích...";
+            resultDesc.innerText = "Đang gửi dữ liệu lên server và phân tích bằng AI, vui lòng đợi trong giây lát...";
+
+            try {
+                // Kết nối tới server Python (Đổi IP thành IP máy tính hoặc domain của bạn nếu test thiết bị khác)
+                const response = await fetch("http://127.0.0.1:5000/api/check", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ content: content })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Lỗi phản hồi từ server");
+                }
+
+                const data = await response.json();
+
+                if (data.result) {
+                    resultDesc.innerText = data.result;
+                    // Gọi hàm lưu dữ liệu vào lịch sử
+                    luuVaoLichSu(content, data.result);
+                } else if (data.error) {
+                    resultDesc.innerText = "Lỗi từ Server: " + data.error;
+                }
+            } catch (error) {
+                console.error("Lỗi kết nối:", error);
+                resultDesc.innerText = "Không thể kết nối đến máy chủ Python. Hãy chắc chắn bạn đã mở terminal và chạy lệnh 'python scam.py'!";
+            } finally {
+                // Trả lại trạng thái nút bấm ban đầu
+                btnCheck.disabled = false;
+                btnCheck.style.opacity = "1";
+                btnCheck.innerText = "🔍 Nhấn để Kiểm tra";
+            }
+        }
+
+        // Hàm hiển thị danh sách lịch sử ra màn hình
+        function taiLichSu() {
+            const historyContainer = document.getElementById("history-container");
+            const listHistory = JSON.parse(localStorage.getItem("scam_history")) || [];
+
+            if (listHistory.length === 0) {
+                historyContainer.innerHTML = '<p class="result-desc" style="color: #777; font-style: italic; padding: 10px 0;">Chưa có lịch sử kiểm tra nào.</p>';
+                return;
+            }
+
+            historyContainer.innerHTML = listHistory.map((item, index) => `
+                <div class="history-item">
+                    <strong style="color: #512da8;">#${index + 1} — Thời gian: ${item.time}</strong>
+                    <p style="margin: 5px 0; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <strong>Tin nhắn:</strong> "${item.content}"
+                    </p>
+                    <p style="margin: 0; color: #555; font-size: 15px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        <strong>Tóm tắt kết quả:</strong> ${item.result}
+                    </p>
+                </div>
+            `).join('');
+        }
+
+        // Hàm lưu một lượt kiểm tra mới vào bộ nhớ thiết bị
+        function luuVaoLichSu(content, result) {
+            const listHistory = JSON.parse(localStorage.getItem("scam_history")) || [];
+            const now = new Date();
+            
+            // Định dạng chuỗi thời gian hiển thị thân thiện h:m - d/m/y
+            const phut = now.getMinutes() < 10 ? '0' + now.getMinutes() : now.getMinutes();
+            const timeString = `${now.getHours()}:${phut} - ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
+
+            // Chèn bản ghi mới lên vị trí đầu tiên
+            listHistory.unshift({ content: content, result: result, time: timeString });
+
+            // Giới hạn bộ nhớ chỉ giữ lại tối đa 5 bản ghi gần nhất
+            if (listHistory.length > 5) listHistory.pop();
+
+            localStorage.setItem("scam_history", JSON.stringify(listHistory));
+            taiLichSu(); // Tải lại giao diện danh sách
+        }
+
+        // Gán các sự kiện kích hoạt ứng dụng khi khởi tạo xong trang
+        document.addEventListener("DOMContentLoaded", taiLichSu);
+        document.querySelector(".btn-check").addEventListener("click", kiemTraTinNhan);
+    </script>
 </body>
 </html>
