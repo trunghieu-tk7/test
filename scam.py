@@ -51,6 +51,7 @@ def check_scam():
         return jsonify({"error": f"Lỗi hệ thống: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    # Đọc cổng do Render cấp tự động, nếu không có thì mặc định là 5000
+    # Ép đọc cổng do Render cấp tự động
+    import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
