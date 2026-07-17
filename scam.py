@@ -51,5 +51,6 @@ def check_scam():
         return jsonify({"error": f"Lỗi hệ thống: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    # Cấu hình host="0.0.0.0" để mở rộng cổng kết nối cho thiết bị di động trong mạng nội bộ
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    # Đọc cổng do Render cấp tự động, nếu không có thì mặc định là 5000
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
